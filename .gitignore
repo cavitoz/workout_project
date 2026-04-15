@@ -1,0 +1,50 @@
+# Flutter/Dart
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/pubspec.lock
+**/.packages
+**/*.g.dart
+**/*.freezed.dart
+
+# Android
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+**/*.jks
+**/android/app/google-services.json
+
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/*.xcworkspace
+
+# macOS
+**/macos/Pods/
+**/macos/.symlinks/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude AI
+.claude/
+
+# Local build artifacts
+$sdkRoot/
+
+# Media (large files - push separately if needed)
+# AUDIOS/
+# VIDEOS/
+# PHOTOS/

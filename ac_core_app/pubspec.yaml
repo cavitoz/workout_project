@@ -1,0 +1,79 @@
+name: ac_core_app
+description: AC CORE - Fitness Workout App
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State Management
+  provider: ^6.1.2
+
+  # Lokal Veritabanı
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Video Oynatma
+  video_player: ^2.8.7
+  chewie: ^1.8.5
+
+  # Ses/Audio
+  audioplayers: ^6.1.0
+
+  # UI Bileşenleri
+  percent_indicator: ^4.2.3
+  fl_chart: ^0.69.0
+
+  # Navigasyon
+  go_router: ^14.2.7
+
+  # Yerelleştirme
+  intl: ^0.20.2
+  easy_localization: ^3.0.7
+
+  # Diğer
+  shared_preferences: ^2.3.2
+  path_provider: ^2.1.4
+  wakelock_plus: ^1.2.8
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.12
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.4.1
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/audio/tr/
+    - assets/audio/en/
+    - assets/audio/
+    - assets/videos/exercises/
+    - assets/images/cover/
+    - assets/images/exercises/
+    - assets/translations/
+
+flutter_launcher_icons:
+  android: true
+  ios: false  # iOS build macOS gerektirir
+  image_path: "assets/images/cover/KAPAK_PHOTO.png"
+  min_sdk_android: 24
+  adaptive_icon_foreground: "assets/images/cover/KAPAK_PHOTO.png"
+  adaptive_icon_background: "#0A141E"
+
+flutter_native_splash:
+  color: "#0A141E"
+  background_image: assets/images/cover/KAPAK_PHOTO.png
+  android: true
+  ios: false  # iOS build macOS gerektirir
