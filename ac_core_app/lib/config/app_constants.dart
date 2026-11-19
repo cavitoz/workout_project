@@ -5,8 +5,11 @@ class AppConstants {
   // ─── VARSAYILAN TIMER DEĞERLERİ ───
   static const int defaultExerciseDuration = 30; // saniye
   static const int defaultRestDuration = 15; // saniye
+  // Referans uygulamada set kavramı yok — her antrenman tek tur.
+  // Varsayılan 1; kullanıcı isterse ayarlardan artırabilir.
   static const int defaultSets = 1;
-  static const int defaultSetRestDuration = 60; // saniye (setler arası)
+  static const int defaultSetRestDuration =
+      60; // saniye (setler arası — 1 dakika)
 
   // ─── BORDER RADIUS SABİTLERİ ───
   static const double radiusSmall = 8.0;
@@ -23,7 +26,12 @@ class AppConstants {
   static const List<int> exerciseDurationOptions = [30, 40, 50, 60]; // saniye
   static const List<int> restDurationOptions = [15, 20, 25, 30]; // saniye
   static const List<int> setsOptions = [1, 2, 3, 4];
-  static const List<int> setRestDurationOptions = [30, 60, 90, 120]; // saniye (set arası)
+  static const List<int> setRestDurationOptions = [
+    30,
+    60,
+    90,
+    120
+  ]; // saniye (set arası)
 
   // ─── ANTRENMAN VERİLERİ ───
   // Ana ekrandaki 5 antrenman kartı

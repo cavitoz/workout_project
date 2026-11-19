@@ -35,6 +35,16 @@ class ChallengeProgress extends HiveObject {
         totalPoints: 0,
       );
 
+  /// Challenge başladı mı? Referansta başlangıç tarihi uygulamanın kurulduğu an
+  /// değil, İLK antrenmanın tamamlandığı andır. Hiç puan yoksa başlamamış sayılır.
+  /// (Hive şeması değişmesin diye ayrı alan yerine puanlardan türetilir.)
+  bool get hasStarted =>
+      totalPoints > 0 || weeklyPoints.values.any((p) => p > 0);
+
+  /// 8 hafta (56 gün) doldu mu? Dolduysa sonraki antrenman yeni challenge başlatır.
+  bool get isExpired =>
+      hasStarted && DateTime.now().difference(startDate).inDays >= 56;
+
   /// Başlangıçtan bu yana geçen hafta sayısı (1-8)
   int getCurrentWeek() {
     final daysDiff = DateTime.now().difference(startDate).inDays;

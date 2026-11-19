@@ -20,18 +20,31 @@ class ChallengeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Mevcut haftaya puan ekle
+  /// Mevcut haftaya puan ekle — referans kuralları:
+  /// - Challenge ilk tamamlanan antrenmanla başlar (başlangıç tarihi o an).
+  /// - 8 hafta × 7 gün; hafta, başlangıçtan geçen gün sayısıyla belirlenir.
+  /// - Haftalık hedef 100 puan; puan 100'de kesilmez, gerçek toplam tutulur.
+  /// - 8 hafta dolduktan sonraki ilk antrenman yeni bir challenge başlatır
+  ///   (toplam puan ve kupalar ömür boyu istatistik olarak korunur).
   Future<void> addPoints(int points) async {
-    final week = _progress.getCurrentWeek();
-    final currentWeekPoints = _progress.getWeekPoints(week);
-    final newPoints =
-        (currentWeekPoints + points).clamp(0, AppConstants.maxPointsPerWeek);
+    if (points <= 0) return;
 
-    _progress.weeklyPoints[week] = newPoints;
+    if (!_progress.hasStarted || _progress.isExpired) {
+      _progress.startDate = DateTime.now();
+      _progress.weeklyPoints = {
+        for (var w = 1; w <= AppConstants.totalWeeks; w++) w: 0,
+      };
+    }
+
+    final week = _progress.getCurrentWeek();
+    // Kupa kontrolü için eklemeden ÖNCEKİ durum alınmalı
+    final wasComplete = _progress.isWeekComplete(week);
+
+    _progress.weeklyPoints[week] = _progress.getWeekPoints(week) + points;
     _progress.totalPoints += points;
 
-    // Hafta hedefi tamamlandıysa kupa ekle
-    if (!_progress.isWeekComplete(week) && newPoints >= 100) {
+    // Hafta hedefine bu antrenmanla ulaşıldıysa kupa ekle (haftada bir kez)
+    if (!wasComplete && _progress.isWeekComplete(week)) {
       _progress.totalTrophies++;
     }
 

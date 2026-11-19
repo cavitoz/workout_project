@@ -37,8 +37,7 @@ class AppTheme {
       Color(0xFF050F19); // En koyu container
   static const Color surfaceContainerLow =
       Color(0xFF121C27); // Video alanı arka planı
-  static const Color surfaceContainer =
-      Color(0xFF17202B); // Kart arka planı
+  static const Color surfaceContainer = Color(0xFF17202B); // Kart arka planı
   static const Color surfaceContainerHigh =
       Color(0xFF212B35); // Yükseltilmiş kart
   static const Color surfaceContainerHighest =
@@ -49,8 +48,7 @@ class AppTheme {
   // ─── TEXT & ICON COLORS ───
   static const Color onBackground =
       Color(0xFFD9E3F2); // Ana metin (açık beyaz-mavi)
-  static const Color onSurface =
-      Color(0xFFD9E3F2); // Surface üstü metin
+  static const Color onSurface = Color(0xFFD9E3F2); // Surface üstü metin
   static const Color onSurfaceVariant =
       Color(0xFFE1BFB5); // İkincil metin (sıcak gri)
   static const Color inverseSurface = Color(0xFFD9E3F2);
@@ -74,8 +72,7 @@ class AppTheme {
   static const Color navBarBg =
       Color(0x992C3641); // Alt nav blur arka planı (%60)
   static const Color navBarActive = Color(0xFFFF6B35); // Aktif tab rengi
-  static const Color navBarInactive =
-      Color(0xFF6B7280); // Pasif tab (gray-500)
+  static const Color navBarInactive = Color(0xFF6B7280); // Pasif tab (gray-500)
   static const Color navBarHover = Color(0xFFFFB59D); // Hover tab
 
   // ─── YILDIZ (ZORLUK SEVİYESİ) RENKLERİ ───

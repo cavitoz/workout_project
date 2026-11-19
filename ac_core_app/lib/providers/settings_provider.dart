@@ -66,14 +66,16 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   /// Tüm ayarları varsayılana sıfırla
+  /// Referans uygulamanın "Reset" davranışı: süreler 30/15, iki ses anahtarı açık.
+  /// Dil kullanıcı tercihi olduğu için sıfırlanmaz.
   Future<void> resetToDefaults() async {
-    _settings.exerciseDuration = 30;
-    _settings.restDuration = 15;
-    _settings.sets = 1;
-    _settings.soundEnabled = true;
-    _settings.countdownVoice = true;
-    _settings.language = 'tr';
-    _settings.setBreakDuration = 60;
+    final d = WorkoutSettings.defaults();
+    _settings.exerciseDuration = d.exerciseDuration;
+    _settings.restDuration = d.restDuration;
+    _settings.sets = d.sets;
+    _settings.soundEnabled = d.soundEnabled;
+    _settings.countdownVoice = d.countdownVoice;
+    _settings.setBreakDuration = d.setBreakDuration;
     await _save();
   }
 

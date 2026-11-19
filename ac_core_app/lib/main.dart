@@ -48,9 +48,11 @@ void main() async {
       child: MultiProvider(
         providers: [
           // Bölüm 5.1 — Ayarlar provider
-          ChangeNotifierProvider(create: (_) => SettingsProvider()..loadSettings()),
+          ChangeNotifierProvider(
+              create: (_) => SettingsProvider()..loadSettings()),
           // Bölüm 5.2 — Antrenman provider
-          ChangeNotifierProvider(create: (_) => WorkoutProvider()..loadWorkouts()),
+          ChangeNotifierProvider(
+              create: (_) => WorkoutProvider()..loadWorkouts()),
           // Bölüm 5.3 — Timer provider
           ChangeNotifierProvider(create: (_) => TimerProvider()),
           // Bölüm 5.4 — Challenge provider

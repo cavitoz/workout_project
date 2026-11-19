@@ -42,6 +42,7 @@ dependencies:
   path_provider: ^2.1.4
   wakelock_plus: ^1.2.8
   google_fonts: ^6.2.1
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +60,7 @@ flutter:
     - assets/audio/tr/
     - assets/audio/en/
     - assets/audio/
+    - assets/audio/countdown/
     - assets/videos/exercises/
     - assets/images/cover/
     - assets/images/exercises/
