@@ -120,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
               language: language,
               onTap: () {
                 workoutProvider.selectWorkout(workouts[index].id);
-                context.go('/workout/${workouts[index].id}');
+                context.push('/workout/${workouts[index].id}');
               },
             );
           },
@@ -144,8 +144,7 @@ class _WorkoutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final starColor =
-        Helpers.difficultyColorFromHex(workout.iconColor);
+    final starColor = Helpers.difficultyColorFromHex(workout.iconColor);
 
     return GestureDetector(
       onTap: onTap,

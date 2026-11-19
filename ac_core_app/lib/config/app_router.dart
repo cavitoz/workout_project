@@ -113,11 +113,21 @@ class MainShell extends StatelessWidget {
 
   const MainShell({super.key, required this.child});
 
+  /// Android geri tuşu: shell içinde push edilmiş sayfa (egzersiz listesi,
+  /// ayarlar) varsa GoRouter onu kapatır. Yoksa ve ana sayfa dışındaki bir
+  /// sekmedeysek önce ana sayfaya dönülür; ana sayfadaysak uygulama kapanır.
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: const BottomNavBar(),
+    final isHome = GoRouterState.of(context).uri.path == '/';
+    return PopScope(
+      canPop: isHome,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/');
+      },
+      child: Scaffold(
+        body: child,
+        bottomNavigationBar: const BottomNavBar(),
+      ),
     );
   }
 }

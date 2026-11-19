@@ -67,7 +67,7 @@ class MoreScreen extends StatelessWidget {
                       _MenuItem(
                         icon: Icons.settings_outlined,
                         label: 'Ayarlar',
-                        onTap: () => context.go('/settings'),
+                        onTap: () => context.push('/settings'),
                       ),
                       _divider(),
                       // Ses Efektleri — toggle
@@ -234,8 +234,7 @@ class _ToggleMenuItem extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeThumbColor: AppTheme.primaryContainer,
-            activeTrackColor:
-                AppTheme.primaryContainer.withValues(alpha: 0.3),
+            activeTrackColor: AppTheme.primaryContainer.withValues(alpha: 0.3),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0x33FFFFFF),
           ),

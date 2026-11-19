@@ -26,6 +26,21 @@ class DatabaseService {
     await Hive.openBox<Workout>(AppConstants.workoutsBox);
     await Hive.openBox<WorkoutSettings>(AppConstants.settingsBox);
     await Hive.openBox<ChallengeProgress>(AppConstants.challengeBox);
+
+    await _migrateSettings();
+  }
+
+  /// Kayıtlı ayarları yeni varsayılanlara taşı.
+  /// Kullanıcının değiştirmediği (eski varsayılan `sets = 1`) kurulumlar
+  /// yeni varsayılan olan 3 sete / 1 dk set arası dinlenmeye yükseltilir.
+  static Future<void> _migrateSettings() async {
+    final settingsBox = Hive.box<WorkoutSettings>(AppConstants.settingsBox);
+    final existing = settingsBox.get('settings');
+    if (existing != null && existing.sets == 1) {
+      existing.sets = AppConstants.defaultSets;
+      existing.setBreakDuration = AppConstants.defaultSetRestDuration;
+      await existing.save();
+    }
   }
 
   /// İlk çalıştırmada varsayılan verileri yükle
@@ -33,23 +48,27 @@ class DatabaseService {
     final exerciseBox = Hive.box<Exercise>(AppConstants.exercisesBox);
     final workoutBox = Hive.box<Workout>(AppConstants.workoutsBox);
     final settingsBox = Hive.box<WorkoutSettings>(AppConstants.settingsBox);
-    final challengeBox =
-        Hive.box<ChallengeProgress>(AppConstants.challengeBox);
+    final challengeBox = Hive.box<ChallengeProgress>(AppConstants.challengeBox);
 
-    // Veri zaten yüklüyse tekrar ekleme
-    if (exerciseBox.isNotEmpty) return;
+    // Egzersiz/antrenman seed verisi güncellendiyse yeniden yükle:
+    // - BARFIKS (pull_up) egzersizi kaldırıldı
+    // - Dambıl Row sağ/sol olarak ikiye ayrıldı (dumbell_row → dumbell_row_right/left)
+    final needsReseed = exerciseBox.isEmpty ||
+        exerciseBox.containsKey('pull_up') ||
+        exerciseBox.containsKey('dumbell_row');
 
-    // ─── EGZERSİZ VERİLERİ ───
-    // Bölüm 6'daki 4 kategoriden 13 egzersiz
-    final exercises = _buildExercises();
-    for (final exercise in exercises) {
-      await exerciseBox.put(exercise.id, exercise);
-    }
+    if (needsReseed) {
+      // ─── EGZERSİZ VERİLERİ ───
+      await exerciseBox.clear();
+      for (final exercise in _buildExercises()) {
+        await exerciseBox.put(exercise.id, exercise);
+      }
 
-    // ─── ANTRENMAN PROGRAMLARI ───
-    final workouts = _buildWorkouts();
-    for (final workout in workouts) {
-      await workoutBox.put(workout.id, workout);
+      // ─── ANTRENMAN PROGRAMLARI ───
+      await workoutBox.clear();
+      for (final workout in _buildWorkouts()) {
+        await workoutBox.put(workout.id, workout);
+      }
     }
 
     // ─── VARSAYILAN AYARLAR ───
@@ -104,8 +123,7 @@ class DatabaseService {
   }
 
   /// Challenge ilerlemesini kaydet
-  static Future<void> saveChallengeProgress(
-      ChallengeProgress progress) async {
+  static Future<void> saveChallengeProgress(ChallengeProgress progress) async {
     await Hive.box<ChallengeProgress>(AppConstants.challengeBox)
         .put('progress', progress);
   }
@@ -136,7 +154,8 @@ class DatabaseService {
         nameTr: 'Biceps Curl',
         nameEn: 'Biceps Curl',
         descriptionTr: 'Dambılları tutarak dirseklerinizi bükerek kaldırın.',
-        descriptionEn: 'Holding dumbbells, curl your arms up by bending elbows.',
+        descriptionEn:
+            'Holding dumbbells, curl your arms up by bending elbows.',
         imagePath: 'assets/images/exercises/biceps_curl.png',
         videoPath: 'assets/videos/exercises/biceps_curl.mp4',
         difficulty: ExerciseDifficulty.easy,
@@ -149,8 +168,7 @@ class DatabaseService {
         nameEn: 'Triceps Extension',
         descriptionTr:
             'Dambılı başın arkasında tutarak kolları yukarı doğru uzatın.',
-        descriptionEn:
-            'Hold dumbbell behind head and extend arms upward.',
+        descriptionEn: 'Hold dumbbell behind head and extend arms upward.',
         imagePath: 'assets/images/exercises/triceps.png',
         videoPath: 'assets/videos/exercises/triceps.mp4',
         difficulty: ExerciseDifficulty.easy,
@@ -215,13 +233,27 @@ class DatabaseService {
       ),
       // Kategori 3: DB ROW - SHOULDER PRESS - RUSSIAN TWIST
       Exercise(
-        id: 'dumbell_row',
-        nameTr: 'Dambıl Row',
-        nameEn: 'Dumbell Row',
+        id: 'dumbell_row_right',
+        nameTr: 'Dambıl Row (Sağ)',
+        nameEn: 'Dumbell Row (Right)',
         descriptionTr:
-            'Öne eğilerek, dambılı karın hizasına kadar çekin ve sırt kaslarını çalıştırın.',
+            'Öne eğilerek, dambılı sağ kolunuzla karın hizasına kadar çekin ve sırt kaslarını çalıştırın.',
         descriptionEn:
-            'Bent over, pull dumbbell to waist height to work back muscles.',
+            'Bent over, pull the dumbbell with your right arm to waist height to work back muscles.',
+        imagePath: 'assets/images/exercises/dumbell_row.png',
+        videoPath: 'assets/videos/exercises/dumbell_row.mp4',
+        difficulty: ExerciseDifficulty.hard,
+        category: 'db-row-shoulder-press-russian-twist',
+        points: 4,
+      ),
+      Exercise(
+        id: 'dumbell_row_left',
+        nameTr: 'Dambıl Row (Sol)',
+        nameEn: 'Dumbell Row (Left)',
+        descriptionTr:
+            'Öne eğilerek, dambılı sol kolunuzla karın hizasına kadar çekin ve sırt kaslarını çalıştırın.',
+        descriptionEn:
+            'Bent over, pull the dumbbell with your left arm to waist height to work back muscles.',
         imagePath: 'assets/images/exercises/dumbell_row.png',
         videoPath: 'assets/videos/exercises/dumbell_row.mp4',
         difficulty: ExerciseDifficulty.hard,
@@ -232,10 +264,8 @@ class DatabaseService {
         id: 'shoulder_press',
         nameTr: 'Omuz Pres',
         nameEn: 'Shoulder Press',
-        descriptionTr:
-            'Dambılları omuz hizasından yukarıya doğru itin.',
-        descriptionEn:
-            'Press dumbbells from shoulder height upward overhead.',
+        descriptionTr: 'Dambılları omuz hizasından yukarıya doğru itin.',
+        descriptionEn: 'Press dumbbells from shoulder height upward overhead.',
         imagePath: 'assets/images/exercises/shoulder_press.png',
         videoPath: 'assets/videos/exercises/shoulder_press.mp4',
         difficulty: ExerciseDifficulty.hard,
@@ -256,20 +286,7 @@ class DatabaseService {
         category: 'db-row-shoulder-press-russian-twist',
         points: 4,
       ),
-      // Kategori 4: BARFİKS - ŞINAV - CRUNCH
-      Exercise(
-        id: 'pull_up',
-        nameTr: 'Barfiks',
-        nameEn: 'Pull-Up',
-        descriptionTr:
-            'Bara tutunarak vücudu yukarı çekin, çene bar hizasına gelsin.',
-        descriptionEn: 'Hang from bar and pull body up until chin clears bar.',
-        imagePath: 'assets/images/exercises/pull-up.png',
-        videoPath: 'assets/videos/exercises/pull-up.mp4',
-        difficulty: ExerciseDifficulty.hard,
-        category: 'barfiks-sinav-crunch',
-        points: 5,
-      ),
+      // Kategori 4: ŞINAV - CRUNCH
       Exercise(
         id: 'push_up',
         nameTr: 'Şınav',
@@ -332,8 +349,14 @@ class DatabaseService {
         id: 'hard',
         nameTr: 'Zor Antrenman',
         nameEn: 'Hard Workout',
-        exerciseIds: ['dumbell_row', 'shoulder_press', 'russian_twist',
-            'push_up', 'crunch'],
+        exerciseIds: [
+          'dumbell_row_right',
+          'dumbell_row_left',
+          'shoulder_press',
+          'russian_twist',
+          'push_up',
+          'crunch'
+        ],
         difficulty: WorkoutDifficulty.hard,
         totalPoints: 18,
         iconColor: '#F59E0B',
@@ -345,9 +368,19 @@ class DatabaseService {
         nameTr: 'Ekstra Zor Antrenman',
         nameEn: 'Extreme Workout',
         exerciseIds: [
-          'lateral', 'biceps_curl', 'triceps', 'plank',
-          'back_fly', 'pec_fly', 'leg_raise', 'dumbell_row',
-          'shoulder_press', 'russian_twist', 'pull_up', 'push_up', 'crunch'
+          'lateral',
+          'biceps_curl',
+          'triceps',
+          'plank',
+          'back_fly',
+          'pec_fly',
+          'leg_raise',
+          'dumbell_row_right',
+          'dumbell_row_left',
+          'shoulder_press',
+          'russian_twist',
+          'push_up',
+          'crunch'
         ],
         difficulty: WorkoutDifficulty.extreme,
         totalPoints: 36,
@@ -360,8 +393,13 @@ class DatabaseService {
         nameTr: 'Bireysel Antrenman',
         nameEn: 'Custom Workout',
         exerciseIds: [
-          'lateral', 'biceps_curl', 'triceps', 'plank',
-          'back_fly', 'pec_fly', 'leg_raise'
+          'lateral',
+          'biceps_curl',
+          'triceps',
+          'plank',
+          'back_fly',
+          'pec_fly',
+          'leg_raise'
         ],
         difficulty: WorkoutDifficulty.custom,
         totalPoints: 18,

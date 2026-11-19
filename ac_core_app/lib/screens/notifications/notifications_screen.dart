@@ -18,7 +18,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final List<bool> _activeDays = List.filled(7, true);
 
   final List<String> _dayNames = [
-    'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'
+    'Pzt',
+    'Sal',
+    'Çar',
+    'Per',
+    'Cum',
+    'Cmt',
+    'Paz'
   ];
 
   @override
@@ -231,8 +237,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               _savePrefs();
             },
             activeThumbColor: AppTheme.primaryContainer,
-            activeTrackColor:
-                AppTheme.primaryContainer.withValues(alpha: 0.3),
+            activeTrackColor: AppTheme.primaryContainer.withValues(alpha: 0.3),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0x33FFFFFF),
           ),
@@ -271,8 +276,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: AppTheme.primaryContainer.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
@@ -368,8 +372,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline,
-              color: AppTheme.secondary, size: 18),
+          Icon(Icons.info_outline, color: AppTheme.secondary, size: 18),
           SizedBox(width: 12),
           Expanded(
             child: Text(

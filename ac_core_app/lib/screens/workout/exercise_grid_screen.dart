@@ -10,6 +10,7 @@ import '../../providers/workout_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../models/exercise.dart';
 import '../../utils/helpers.dart';
+import '../../utils/navigation.dart';
 
 class ExerciseGridScreen extends StatefulWidget {
   final String workoutId;
@@ -57,8 +58,7 @@ class _ExerciseGridScreenState extends State<ExerciseGridScreen> {
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
@@ -98,9 +98,9 @@ class _ExerciseGridScreenState extends State<ExerciseGridScreen> {
         children: [
           // Geri butonu
           IconButton(
-            onPressed: () => context.pop(),
-            icon: const Icon(Icons.arrow_back,
-                color: AppTheme.primaryContainer),
+            onPressed: () => context.popOrGo('/'),
+            icon:
+                const Icon(Icons.arrow_back, color: AppTheme.primaryContainer),
           ),
           // Başlık
           const Expanded(
@@ -135,17 +135,16 @@ class _ExerciseGridScreenState extends State<ExerciseGridScreen> {
   }
 
   /// Alt "X Puan Kazan" butonu
-  Widget _buildStartButton(
-      BuildContext context, int points, String workoutId) {
+  Widget _buildStartButton(BuildContext context, int points, String workoutId) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       child: GestureDetector(
-        onTap: () => context.go('/workout/$workoutId/play'),
+        onTap: () => context.push('/workout/$workoutId/play'),
         child: Container(
           height: 56,
           width: double.infinity,
-          decoration: orangeGradientDecoration(
-              borderRadius: AppConstants.radiusMedium),
+          decoration:
+              orangeGradientDecoration(borderRadius: AppConstants.radiusMedium),
           child: Center(
             child: Text(
               '$points Puan Kazan ›',

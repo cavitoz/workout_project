@@ -2,12 +2,12 @@
 // Egzersiz süresi, dinlenme, set, ses ve dil ayarları
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../config/app_theme.dart';
 import '../../config/app_constants.dart';
 import '../../providers/settings_provider.dart';
+import '../../utils/navigation.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -35,8 +35,7 @@ class SettingsScreen extends StatelessWidget {
                         value: settings.exerciseDuration,
                         options: AppConstants.exerciseDurationOptions,
                         suffix: 'SN',
-                        onChanged: (val) =>
-                            settings.setExerciseDuration(val),
+                        onChanged: (val) => settings.setExerciseDuration(val),
                       ),
                       const SizedBox(height: 10),
                       _buildDropdown(
@@ -78,8 +77,7 @@ class SettingsScreen extends StatelessWidget {
                       _buildToggle(
                         label: 'Geri Sayım Sesi',
                         value: settings.countdownVoice,
-                        onChanged: (val) =>
-                            settings.setCountdownVoice(val),
+                        onChanged: (val) => settings.setCountdownVoice(val),
                       ),
                       const SizedBox(height: 24),
                       // ─── Dil ───
@@ -107,9 +105,9 @@ class SettingsScreen extends StatelessWidget {
       child: Row(
         children: [
           IconButton(
-            onPressed: () => context.pop(),
-            icon: const Icon(Icons.arrow_back,
-                color: AppTheme.primaryContainer),
+            onPressed: () => context.popOrGo('/more'),
+            icon:
+                const Icon(Icons.arrow_back, color: AppTheme.primaryContainer),
           ),
           const Expanded(
             child: Text(
@@ -225,8 +223,7 @@ class SettingsScreen extends StatelessWidget {
     required Function(bool) onChanged,
   }) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0x1AFFFFFF),
         borderRadius: BorderRadius.circular(8),
@@ -252,8 +249,7 @@ class SettingsScreen extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeThumbColor: AppTheme.primaryContainer,
-            activeTrackColor:
-                AppTheme.primaryContainer.withValues(alpha: 0.3),
+            activeTrackColor: AppTheme.primaryContainer.withValues(alpha: 0.3),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0x33FFFFFF),
           ),
@@ -319,8 +315,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   /// Sıfırla butonu
-  Widget _buildResetButton(
-      BuildContext context, SettingsProvider settings) {
+  Widget _buildResetButton(BuildContext context, SettingsProvider settings) {
     return OutlinedButton(
       onPressed: () => settings.resetToDefaults(),
       style: OutlinedButton.styleFrom(

@@ -83,7 +83,9 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
                   const SizedBox(height: 24),
                   // Başlangıç tarihi
                   Text(
-                    'Başlangıç: ${DateFormat('dd.MM.yyyy').format(progress.startDate)}',
+                    progress.hasStarted
+                        ? 'Başlangıç: ${DateFormat('dd.MM.yyyy').format(progress.startDate)}'
+                        : 'Başlangıç: İlk antrenmanla başlar',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 13,
@@ -179,7 +181,10 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
               x: index,
               barRods: [
                 BarChartRodData(
-                  toY: value > 0 ? value : 4, // Minimum görünürlük
+                  // Puan 100'ü geçebilir; çubuk grafiğin üstünden taşmasın
+                  toY: value > 0
+                      ? value.clamp(0, AppConstants.maxPointsPerWeek.toDouble())
+                      : 4, // Minimum görünürlük
                   gradient: hasData
                       ? const LinearGradient(
                           colors: [
@@ -225,8 +230,7 @@ class _ChallengeScreenState extends State<ChallengeScreen> {
   }
 
   /// Sıfırlama onay dialogu
-  void _confirmReset(
-      BuildContext context, ChallengeProvider provider) {
+  void _confirmReset(BuildContext context, ChallengeProvider provider) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(

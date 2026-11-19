@@ -37,11 +37,31 @@ class BottomNavBar extends StatelessWidget {
         padding: EdgeInsets.only(bottom: bottomPadding),
         child: Row(
           children: [
-            _NavItem(icon: Icons.fitness_center, label: 'ANTRENMAN', isActive: currentIndex == 0, onTap: () => context.go('/')),
-            _NavItem(icon: Icons.play_circle_outline, label: 'EGZERSİZ', isActive: currentIndex == 1, onTap: () => context.go('/exercises')),
-            _NavItem(icon: Icons.emoji_events_outlined, label: 'CHALLENGE', isActive: currentIndex == 2, onTap: () => context.go('/challenge')),
-            _NavItem(icon: Icons.notifications_outlined, label: 'BİLDİRİM', isActive: currentIndex == 3, onTap: () => context.go('/notifications')),
-            _NavItem(icon: Icons.menu, label: 'MENÜ', isActive: currentIndex == 4, onTap: () => context.go('/more')),
+            _NavItem(
+                icon: Icons.fitness_center,
+                label: 'ANTRENMAN',
+                isActive: currentIndex == 0,
+                onTap: () => context.go('/')),
+            _NavItem(
+                icon: Icons.play_circle_outline,
+                label: 'EGZERSİZ',
+                isActive: currentIndex == 1,
+                onTap: () => context.go('/exercises')),
+            _NavItem(
+                icon: Icons.emoji_events_outlined,
+                label: 'CHALLENGE',
+                isActive: currentIndex == 2,
+                onTap: () => context.go('/challenge')),
+            _NavItem(
+                icon: Icons.notifications_outlined,
+                label: 'BİLDİRİM',
+                isActive: currentIndex == 3,
+                onTap: () => context.go('/notifications')),
+            _NavItem(
+                icon: Icons.menu,
+                label: 'MENÜ',
+                isActive: currentIndex == 4,
+                onTap: () => context.go('/more')),
           ],
         ),
       ),
@@ -77,44 +97,43 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isActive ? AppTheme.navBarActive : AppTheme.navBarInactive;
+    final color = isActive ? AppTheme.navBarActive : AppTheme.navBarInactive;
 
     return Expanded(
       child: GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        decoration: isActive
-            ? BoxDecoration(
-                // Aktif tab: glassmorphism vurgu
-                color: const Color(0x0DFFFFFF), // white/5%
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x33FF6B35), // inset glow
-                    blurRadius: 8,
-                    spreadRadius: -2,
-                  ),
-                ],
-              )
-            : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTextStyles.navLabel.copyWith(color: color),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ],
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: isActive
+              ? BoxDecoration(
+                  // Aktif tab: glassmorphism vurgu
+                  color: const Color(0x0DFFFFFF), // white/5%
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33FF6B35), // inset glow
+                      blurRadius: 8,
+                      spreadRadius: -2,
+                    ),
+                  ],
+                )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: AppTextStyles.navLabel.copyWith(color: color),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

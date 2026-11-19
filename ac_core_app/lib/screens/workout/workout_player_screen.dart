@@ -13,6 +13,8 @@ import '../../providers/workout_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/challenge_provider.dart';
 import '../../models/exercise.dart';
+import '../../services/timer_service.dart' show TimerState;
+import '../../utils/navigation.dart';
 
 class WorkoutPlayerScreen extends StatefulWidget {
   final String workoutId;
@@ -23,7 +25,16 @@ class WorkoutPlayerScreen extends StatefulWidget {
   State<WorkoutPlayerScreen> createState() => _WorkoutPlayerScreenState();
 }
 
-class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
+class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen>
+    with WidgetsBindingObserver {
+  // Timer provider global — dispose'da context kullanılamadığı için referans tutulur
+  late final TimerProvider _timerProvider;
+
+  // Tamamlanma işlemi (puan ekleme + yönlendirme) yalnızca bir kez çalışmalı;
+  // build her tetiklendiğinde tekrar puan eklenmesini engeller.
+  bool _completionHandled = false;
+  bool _exitDialogOpen = false;
+
   // Şu an görüntülenen video
   VideoPlayerController? _videoController;
   String? _currentVideoPath;
@@ -42,19 +53,86 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
     super.initState();
     WakelockPlus.enable();
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    WidgetsBinding.instance.addObserver(this);
+    _timerProvider = context.read<TimerProvider>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Listener'ı ÖNCE ekle, sonra antrenmanı başlat
-      context.read<TimerProvider>().addListener(_onTimerStateChanged);
+      _timerProvider.addListener(_onTimerStateChanged);
       _initWorkout();
     });
+  }
+
+  /// Referans davranış: uygulama arka plana geçince (ekran kilidi, gelen arama,
+  /// ana ekran) sayaç, video ve ses otomatik duraklatılır. Geri dönüldüğünde
+  /// kullanıcı devam butonuna basarak sürdürür — otomatik devam yok.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      if (_timerProvider.isPlaying) _timerProvider.pause();
+    }
+  }
+
+  /// Referans davranış: geri/çıkış önce sayacı duraklatır, onay sorar.
+  /// "Çık" → sayaç sıfırlanır, ekrandan çıkılır. "Devam" → kaldığı yerden sürer.
+  Future<void> _confirmExit() async {
+    if (_exitDialogOpen) return;
+    _exitDialogOpen = true;
+    final wasPlaying = _timerProvider.isPlaying;
+    if (wasPlaying) _timerProvider.pause();
+
+    final isTr = context.read<SettingsProvider>().language == 'tr';
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surfaceContainerHighest,
+        title: Text(
+          isTr ? 'Antrenmandan çıkılsın mı?' : 'Quit workout?',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          isTr
+              ? 'İlerlemen kaydedilmeyecek.'
+              : 'Your progress will not be saved.',
+          style: const TextStyle(color: AppTheme.onSurfaceVariant),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(isTr ? 'Devam Et' : 'Continue'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(isTr ? 'Çık' : 'Quit'),
+          ),
+        ],
+      ),
+    );
+    _exitDialogOpen = false;
+    if (!mounted) return;
+
+    if (shouldExit == true) {
+      _timerProvider.reset();
+      // Çıkışta egzersiz listesine dön (yığında yoksa oraya git)
+      context.popOrGo('/workout/${widget.workoutId}');
+    } else if (wasPlaying) {
+      _timerProvider.resume();
+    }
   }
 
   void _initWorkout() {
     final workoutProvider = context.read<WorkoutProvider>();
     final settingsProvider = context.read<SettingsProvider>();
     final timerProvider = context.read<TimerProvider>();
-    workoutProvider.selectWorkout(widget.workoutId);
+    // Grid ekranında karıştırılan sıra korunmalı: aynı antrenman zaten seçiliyse
+    // yeniden seçme — aksi halde selectWorkout sıralamayı orijinaline (lateral ilk)
+    // sıfırlar ve antrenman hep ilk egzersizden başlar.
+    if (workoutProvider.activeWorkout?.id != widget.workoutId ||
+        workoutProvider.activeExercises.isEmpty) {
+      workoutProvider.selectWorkout(widget.workoutId);
+    }
     timerProvider.startWorkout(
       workoutProvider.activeExercises,
       settingsProvider.settings,
@@ -162,8 +240,14 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
   @override
   void dispose() {
     WakelockPlus.disable();
-    if (mounted) {
-      context.read<TimerProvider>().removeListener(_onTimerStateChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    _timerProvider.removeListener(_onTimerStateChanged);
+    // TimerProvider uygulama genelinde yaşar: ekrandan hangi yolla çıkılırsa
+    // çıkılsın sayaç ve ses arka planda çalışmaya devam etmemeli.
+    if (!_timerProvider.isCompleted &&
+        _timerProvider.timerState != TimerState.idle) {
+      final timer = _timerProvider;
+      Future.microtask(timer.reset);
     }
     _videoController?.dispose();
     _nextVideoController?.dispose();
@@ -172,57 +256,65 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: Consumer3<TimerProvider, WorkoutProvider, SettingsProvider>(
-        builder: (context, timerProvider, workoutProvider, settingsProvider, _) {
-          // Tamamlandıysa yönlendir
-          if (timerProvider.isCompleted) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              final workout = workoutProvider.activeWorkout;
-              context.read<ChallengeProvider>().addPoints(
-                    workout?.totalPoints ?? 0,
-                  );
-              context.go('/complete', extra: {
-                'points': workout?.totalPoints ?? 0,
-                'workoutName':
-                    workout?.getName(settingsProvider.language) ?? '',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmExit();
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        body: Consumer3<TimerProvider, WorkoutProvider, SettingsProvider>(
+          builder:
+              (context, timerProvider, workoutProvider, settingsProvider, _) {
+            // Tamamlandıysa yönlendir — yalnızca bir kez
+            if (timerProvider.isCompleted && !_completionHandled) {
+              _completionHandled = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                final workout = workoutProvider.activeWorkout;
+                context.read<ChallengeProvider>().addPoints(
+                      workout?.totalPoints ?? 0,
+                    );
+                context.go('/complete', extra: {
+                  'points': workout?.totalPoints ?? 0,
+                  'workoutName':
+                      workout?.getName(settingsProvider.language) ?? '',
+                });
               });
-            });
-          }
+            }
 
-          final exercise = timerProvider.currentExercise;
-          final workout = workoutProvider.activeWorkout;
-          final language = settingsProvider.language;
+            final exercise = timerProvider.currentExercise;
+            final workout = workoutProvider.activeWorkout;
+            final language = settingsProvider.language;
 
-          return SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, workout?.durationMinutes ?? 5, language,
-                    timerProvider),
-                const SizedBox(height: 12),
-                _buildVideoArea(timerProvider.isResting),
-                const SizedBox(height: 12),
-                _buildExerciseBand(
-                  exercise,
-                  timerProvider,
-                  language,
-                  workoutProvider.activeExercises.length,
-                ),
-                const SizedBox(height: 20),
-                _buildCircularTimer(timerProvider),
-                const SizedBox(height: 24),
-                _buildControls(context, timerProvider),
-                const SizedBox(height: 20),
-                if (timerProvider.isExercising)
-                  _buildRestCard(timerProvider, settingsProvider),
-                if (timerProvider.isSetResting)
-                  _buildSetRestCard(timerProvider, settingsProvider),
-                const Spacer(),
-              ],
-            ),
-          );
-        },
+            return SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(context, workout?.durationMinutes ?? 5, language,
+                      timerProvider),
+                  const SizedBox(height: 12),
+                  _buildVideoArea(timerProvider.isResting),
+                  const SizedBox(height: 12),
+                  _buildExerciseBand(
+                    exercise,
+                    timerProvider,
+                    language,
+                    workoutProvider.activeExercises.length,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildCircularTimer(timerProvider),
+                  const SizedBox(height: 24),
+                  _buildControls(context, timerProvider),
+                  const SizedBox(height: 20),
+                  if (timerProvider.isExercising)
+                    _buildRestCard(timerProvider, settingsProvider),
+                  if (timerProvider.isSetResting)
+                    _buildSetRestCard(timerProvider, settingsProvider),
+                  const Spacer(),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -234,17 +326,13 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () {
-              context.read<TimerProvider>().reset();
-              context.pop();
-            },
+            onTap: _confirmExit,
             child: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border:
-                    Border.all(color: const Color(0x4DFFFFFF), width: 1),
+                border: Border.all(color: const Color(0x4DFFFFFF), width: 1),
               ),
               child: const Icon(Icons.arrow_back,
                   color: AppTheme.primaryContainer, size: 20),
@@ -285,8 +373,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border:
-                    Border.all(color: const Color(0x4DFFFFFF), width: 1),
+                border: Border.all(color: const Color(0x4DFFFFFF), width: 1),
               ),
               child: const Icon(Icons.share_outlined,
                   color: AppTheme.onSurfaceVariant, size: 20),
@@ -334,8 +421,8 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
                         Icon(
                           Icons.fitness_center,
                           size: 48,
-                          color: AppTheme.primaryContainer
-                              .withValues(alpha: 0.6),
+                          color:
+                              AppTheme.primaryContainer.withValues(alpha: 0.6),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -402,8 +489,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           color: bandColor,
           borderRadius: BorderRadius.circular(12),
@@ -504,9 +590,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
                 ),
                 const SizedBox(height: 4),
                 Icon(
-                  timerProvider.isPaused
-                      ? Icons.play_arrow
-                      : Icons.pause,
+                  timerProvider.isPaused ? Icons.play_arrow : Icons.pause,
                   size: 20,
                   color: AppTheme.onSurfaceVariant,
                 ),
@@ -550,9 +634,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
         ),
         const SizedBox(width: 32),
         _ControlButton(
-            icon: Icons.skip_next,
-            size: 48,
-            onTap: () => timerProvider.skip()),
+            icon: Icons.skip_next, size: 48, onTap: () => timerProvider.skip()),
       ],
     );
   }
@@ -658,8 +740,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
           ),
           borderRadius: BorderRadius.circular(32),
           border: Border.all(
-              color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
-              width: 1),
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.3), width: 1),
         ),
         child: Row(
           children: [
@@ -785,8 +866,7 @@ class _ControlButton extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-              color: AppTheme.outlineVariant.withValues(alpha: 0.3),
-              width: 1),
+              color: AppTheme.outlineVariant.withValues(alpha: 0.3), width: 1),
         ),
         child: Icon(icon, color: AppTheme.onSurfaceVariant, size: 24),
       ),

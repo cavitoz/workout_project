@@ -37,8 +37,7 @@ class TimerProvider extends ChangeNotifier {
   bool get isPaused => timerState == TimerState.paused;
   bool get isCompleted => timerState == TimerState.completed;
   bool get isResting =>
-      timerState == TimerState.resting ||
-      timerState == TimerState.setResting;
+      timerState == TimerState.resting || timerState == TimerState.setResting;
   bool get isSetResting => timerState == TimerState.setResting;
   bool get isExercising => timerState == TimerState.exercising;
 
@@ -46,8 +45,16 @@ class TimerProvider extends ChangeNotifier {
   bool get isMuted => _audioService.isMuted;
 
   /// Antrenmanı başlat
-  void startWorkout(List<Exercise> exercises, WorkoutSettings settings) {
-    _audioService.setMuted(!settings.soundEnabled);
+  /// TTS dili ilk anonstan önce ayarlanır (sonraki çağrılarda önbellekten döner).
+  Future<void> startWorkout(
+      List<Exercise> exercises, WorkoutSettings settings) async {
+    // Ses anahtarları ayrı ayrı TimerService içinde uygulanır (referanstaki gibi):
+    // soundEnabled = "Egzersiz Açıklaması" (TTS anonsları),
+    // countdownVoice = "Geri Sayım Sesi" (5-4-3-2-1 + son 10 sn).
+    _audioService.setMuted(false);
+    await _audioService.setVoiceLanguage(settings.language);
+    // Geri sayım kliplerini sayaç başlamadan yükle (ilk tetiklemede gecikme olmasın)
+    await _audioService.preloadClips();
     _timerService.startWorkout(exercises, settings);
   }
 
